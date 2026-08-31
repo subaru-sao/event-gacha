@@ -1,1 +1,1157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>イベントガチャ</title>
 
+<style>
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Helvetica Neue",
+        "Yu Gothic",
+        sans-serif;
+    background: #050814;
+    color: white;
+}
+
+body {
+    position: relative;
+}
+
+/* =========================
+   メイン画面
+========================= */
+
+#app {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(20, 40, 100, .35),
+            rgba(3, 6, 18, 1) 65%
+        );
+}
+
+/* 星・粒子 */
+.particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: white;
+    opacity: .5;
+    animation: particleFloat linear infinite;
+}
+
+@keyframes particleFloat {
+    from {
+        transform: translateY(110vh);
+        opacity: 0;
+    }
+
+    20% {
+        opacity: .5;
+    }
+
+    80% {
+        opacity: .5;
+    }
+
+    to {
+        transform: translateY(-10vh);
+        opacity: 0;
+    }
+}
+
+/* =========================
+   ヘッダー
+========================= */
+
+.header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 24px 20px;
+    text-align: center;
+    z-index: 10;
+}
+
+.title {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: .15em;
+    text-shadow:
+        0 0 12px rgba(120,180,255,.8),
+        0 0 30px rgba(60,120,255,.5);
+}
+
+.subtitle {
+    margin-top: 8px;
+    font-size: 11px;
+    letter-spacing: .25em;
+    opacity: .55;
+}
+
+/* =========================
+   ガチャエリア
+========================= */
+
+.gacha-area {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/*
+   中央の青い丸は作らない。
+   ボタンだけ配置。
+*/
+
+.gacha-button {
+    position: relative;
+    z-index: 20;
+    width: min(78vw, 330px);
+    height: 74px;
+    border: 1px solid rgba(255,255,255,.65);
+    border-radius: 40px;
+
+    color: white;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,.22),
+            rgba(90,130,255,.18)
+        );
+
+    box-shadow:
+        0 0 25px rgba(100,150,255,.35),
+        inset 0 0 20px rgba(255,255,255,.12);
+
+    backdrop-filter: blur(10px);
+
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: .2em;
+
+    cursor: pointer;
+
+    transition:
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+.gacha-button:active {
+    transform: scale(.94);
+}
+
+.gacha-button::before {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: inherit;
+    border: 1px solid rgba(255,255,255,.15);
+    pointer-events: none;
+}
+
+.gacha-button.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* =========================
+   演出レイヤー
+========================= */
+
+#effectLayer {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0;
+}
+
+/* 全体の色 */
+
+.colorOverlay {
+    position: absolute;
+    inset: -20%;
+    opacity: 0;
+    transform: scale(.7);
+
+    transition:
+        opacity .35s ease,
+        transform 1s cubic-bezier(.12,.7,.2,1);
+
+    mix-blend-mode: screen;
+}
+
+.colorOverlay.white {
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(255,255,255,.95) 0%,
+            rgba(255,255,255,.55) 15%,
+            rgba(255,255,255,.18) 38%,
+            transparent 72%
+        );
+}
+
+.colorOverlay.blue {
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(80,150,255,.95) 0%,
+            rgba(40,100,255,.65) 20%,
+            rgba(20,60,220,.35) 48%,
+            transparent 76%
+        );
+}
+
+.colorOverlay.red {
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(255,90,90,.98) 0%,
+            rgba(255,30,60,.7) 20%,
+            rgba(180,20,50,.4) 50%,
+            transparent 78%
+        );
+}
+
+.colorOverlay.gold {
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(255,245,180,1) 0%,
+            rgba(255,210,50,.9) 18%,
+            rgba(255,170,20,.55) 45%,
+            transparent 78%
+        );
+}
+
+.colorOverlay.rainbow {
+    background:
+        conic-gradient(
+            from 0deg,
+            #ff3b3b,
+            #ffd83b,
+            #5dff75,
+            #42e8ff,
+            #6b70ff,
+            #d75cff,
+            #ff3b91,
+            #ff3b3b
+        );
+
+    opacity: 0;
+    filter: blur(30px);
+}
+
+/* =========================
+   白い輪
+   中央から外へ広がる
+========================= */
+
+.ring-container {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    transform: translate(-50%, -50%);
+}
+
+.ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+
+    width: 20px;
+    height: 20px;
+
+    border-radius: 50%;
+
+    transform:
+        translate(-50%, -50%)
+        scale(.1);
+
+    border: 4px solid rgba(255,255,255,.95);
+
+    box-shadow:
+        0 0 15px rgba(255,255,255,.95),
+        0 0 40px rgba(255,255,255,.7),
+        0 0 90px rgba(255,255,255,.45);
+
+    opacity: 0;
+}
+
+/* =========================
+   フラッシュ
+========================= */
+
+.flash {
+    position: absolute;
+    inset: 0;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(255,255,255,1),
+            rgba(255,255,255,.5) 15%,
+            transparent 65%
+        );
+
+    opacity: 0;
+}
+
+/* =========================
+   レアリティごとの輝き
+========================= */
+
+.aura {
+    position: absolute;
+    inset: -10%;
+
+    opacity: 0;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(255,255,255,.9),
+            transparent 55%
+        );
+
+    filter: blur(20px);
+}
+
+/* =========================
+   結果
+========================= */
+
+#result {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+
+    z-index: 100;
+
+    width: 90%;
+    text-align: center;
+
+    transform:
+        translate(-50%, -50%)
+        scale(.5);
+
+    opacity: 0;
+
+    pointer-events: none;
+}
+
+.result-rarity {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: .35em;
+    margin-bottom: 15px;
+
+    opacity: .9;
+}
+
+.result-name {
+    font-size: clamp(30px, 8vw, 56px);
+    font-weight: 900;
+    letter-spacing: .08em;
+
+    text-shadow:
+        0 0 10px white,
+        0 0 30px currentColor,
+        0 0 70px currentColor;
+}
+
+.result-sub {
+    margin-top: 15px;
+    font-size: 12px;
+    letter-spacing: .3em;
+    opacity: .65;
+}
+
+/* =========================
+   結果ボタン
+========================= */
+
+#againButton {
+    position: fixed;
+    left: 50%;
+    bottom: 45px;
+
+    z-index: 110;
+
+    width: min(70vw, 280px);
+    height: 58px;
+
+    transform:
+        translateX(-50%)
+        translateY(30px);
+
+    opacity: 0;
+    pointer-events: none;
+
+    border: 1px solid rgba(255,255,255,.55);
+    border-radius: 30px;
+
+    color: white;
+
+    background: rgba(255,255,255,.08);
+    backdrop-filter: blur(10px);
+
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: .15em;
+}
+
+#againButton.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+
+    transition:
+        opacity .5s ease,
+        transform .5s ease;
+}
+
+/* =========================
+   演出中
+========================= */
+
+body.drawing .gacha-button {
+    display: none;
+}
+
+/* 白輪アニメーション */
+
+@keyframes ringExpand {
+    0% {
+        transform:
+            translate(-50%, -50%)
+            scale(.1);
+
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    100% {
+        transform:
+            translate(-50%, -50%)
+            scale(45);
+
+        opacity: 0;
+    }
+}
+
+/* =========================
+   画面全体フラッシュ
+========================= */
+
+@keyframes fullFlash {
+    0% {
+        opacity: 0;
+    }
+
+    40% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+@keyframes rainbowPulse {
+    0% {
+        transform: scale(.8);
+        opacity: 0;
+    }
+
+    40% {
+        transform: scale(1.1);
+        opacity: .85;
+    }
+
+    100% {
+        transform: scale(1.4);
+        opacity: 0;
+    }
+}
+
+/* =========================
+   PC
+========================= */
+
+@media (min-width: 700px) {
+    .title {
+        font-size: 34px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+    <div class="particles" id="particles"></div>
+
+    <div class="header">
+        <div class="title">イベントガチャ</div>
+        <div class="subtitle">SPECIAL EVENT</div>
+    </div>
+
+    <div class="gacha-area">
+        <button
+            id="gachaButton"
+            class="gacha-button">
+            ガチャを引く
+        </button>
+    </div>
+
+</div>
+
+
+<!-- =========================
+     演出
+========================= -->
+
+<div id="effectLayer">
+
+    <div
+        id="whiteOverlay"
+        class="colorOverlay white">
+    </div>
+
+    <div
+        id="blueOverlay"
+        class="colorOverlay blue">
+    </div>
+
+    <div
+        id="redOverlay"
+        class="colorOverlay red">
+    </div>
+
+    <div
+        id="goldOverlay"
+        class="colorOverlay gold">
+    </div>
+
+    <div
+        id="rainbowOverlay"
+        class="colorOverlay rainbow">
+    </div>
+
+    <div class="aura" id="aura"></div>
+
+    <div
+        class="ring-container"
+        id="ringContainer">
+    </div>
+
+    <div
+        class="flash"
+        id="flash">
+    </div>
+
+</div>
+
+
+<!-- =========================
+     結果
+========================= -->
+
+<div id="result">
+
+    <div
+        id="resultRarity"
+        class="result-rarity">
+    </div>
+
+    <div
+        id="resultName"
+        class="result-name">
+    </div>
+
+    <div class="result-sub">
+        GET ITEM
+    </div>
+
+</div>
+
+<button id="againButton">
+    もう一度引く
+</button>
+
+
+<script>
+
+/* ==================================================
+   ガチャ設定
+================================================== */
+
+/*
+   ここを変更すると景品を変更できます。
+
+   weight = 当選しやすさ
+
+   例：
+   100 → 出やすい
+   10  → 普通
+   1   → レア
+*/
+
+const prizes = [
+
+    {
+        name: "イベントアイテム",
+        rarity: "NORMAL",
+        weight: 70,
+        effect: "white"
+    },
+
+    {
+        name: "レアアイテム",
+        rarity: "RARE",
+        weight: 20,
+        effect: "blue"
+    },
+
+    {
+        name: "超レアアイテム",
+        rarity: "SUPER RARE",
+        weight: 8,
+        effect: "red"
+    },
+
+    {
+        name: "激レアアイテム",
+        rarity: "ULTRA RARE",
+        weight: 1.8,
+        effect: "gold"
+    },
+
+    {
+        name: "伝説のアイテム",
+        rarity: "LEGEND",
+        weight: 0.2,
+        effect: "rainbow"
+    }
+
+];
+
+
+/* ==================================================
+   DOM
+================================================== */
+
+const gachaButton =
+    document.getElementById("gachaButton");
+
+const againButton =
+    document.getElementById("againButton");
+
+const effectLayer =
+    document.getElementById("effectLayer");
+
+const whiteOverlay =
+    document.getElementById("whiteOverlay");
+
+const blueOverlay =
+    document.getElementById("blueOverlay");
+
+const redOverlay =
+    document.getElementById("redOverlay");
+
+const goldOverlay =
+    document.getElementById("goldOverlay");
+
+const rainbowOverlay =
+    document.getElementById("rainbowOverlay");
+
+const aura =
+    document.getElementById("aura");
+
+const flash =
+    document.getElementById("flash");
+
+const ringContainer =
+    document.getElementById("ringContainer");
+
+const result =
+    document.getElementById("result");
+
+const resultRarity =
+    document.getElementById("resultRarity");
+
+const resultName =
+    document.getElementById("resultName");
+
+const particles =
+    document.getElementById("particles");
+
+
+/* ==================================================
+   背景粒子
+================================================== */
+
+for (let i = 0; i < 45; i++) {
+
+    const p =
+        document.createElement("div");
+
+    p.className = "particle";
+
+    p.style.left =
+        Math.random() * 100 + "%";
+
+    p.style.animationDuration =
+        (5 + Math.random() * 10) + "s";
+
+    p.style.animationDelay =
+        (-Math.random() * 10) + "s";
+
+    p.style.opacity =
+        .15 + Math.random() * .5;
+
+    particles.appendChild(p);
+}
+
+
+/* ==================================================
+   抽選
+================================================== */
+
+function getPrize() {
+
+    const total =
+        prizes.reduce(
+            (sum, prize) =>
+                sum + prize.weight,
+            0
+        );
+
+    let random =
+        Math.random() * total;
+
+    for (const prize of prizes) {
+
+        random -= prize.weight;
+
+        if (random <= 0) {
+            return prize;
+        }
+    }
+
+    return prizes[0];
+}
+
+
+/* ==================================================
+   リセット
+================================================== */
+
+function resetEffects() {
+
+    effectLayer.style.opacity = "0";
+
+    [
+        whiteOverlay,
+        blueOverlay,
+        redOverlay,
+        goldOverlay,
+        rainbowOverlay
+    ].forEach(el => {
+
+        el.style.opacity = "0";
+        el.style.transform = "scale(.7)";
+
+    });
+
+    aura.style.opacity = "0";
+
+    flash.style.opacity = "0";
+
+    ringContainer.innerHTML = "";
+
+    result.style.opacity = "0";
+    result.style.transform =
+        "translate(-50%, -50%) scale(.5)";
+
+    againButton.classList.remove("show");
+
+    document.body.classList.remove("drawing");
+}
+
+
+/* ==================================================
+   白い輪を発生
+================================================== */
+
+function createRing() {
+
+    const ring =
+        document.createElement("div");
+
+    ring.className = "ring";
+
+    ringContainer.appendChild(ring);
+
+    requestAnimationFrame(() => {
+
+        ring.style.animation =
+            "ringExpand 1.4s cubic-bezier(.15,.7,.2,1) forwards";
+
+    });
+
+    setTimeout(() => {
+        ring.remove();
+    }, 1500);
+}
+
+
+/* ==================================================
+   色を発生
+================================================== */
+
+function activateColor(element, duration = 800) {
+
+    element.style.opacity = "1";
+    element.style.transform = "scale(1.5)";
+
+    setTimeout(() => {
+
+        element.style.opacity = "0";
+
+    }, duration);
+}
+
+
+/* ==================================================
+   フラッシュ
+================================================== */
+
+function doFlash() {
+
+    flash.style.animation =
+        "none";
+
+    void flash.offsetWidth;
+
+    flash.style.animation =
+        "fullFlash .65s ease-out forwards";
+}
+
+
+/* ==================================================
+   白 → 青 → 赤 → 金 → 虹
+================================================== */
+
+async function playEffect(prize) {
+
+    effectLayer.style.opacity = "1";
+
+    /* ----------------------------------------------
+       STEP 1
+       白
+    ---------------------------------------------- */
+
+    activateColor(
+        whiteOverlay,
+        900
+    );
+
+    createRing();
+
+    await wait(850);
+
+
+    /* ----------------------------------------------
+       STEP 2
+       青
+    ---------------------------------------------- */
+
+    activateColor(
+        blueOverlay,
+        1000
+    );
+
+    createRing();
+
+    await wait(900);
+
+
+    /*
+       NORMALならここで結果へ
+    */
+
+    if (prize.effect === "white") {
+
+        doFlash();
+
+        await wait(500);
+
+        showResult(prize);
+
+        return;
+    }
+
+
+    /* ----------------------------------------------
+       STEP 3
+       赤
+    ---------------------------------------------- */
+
+    activateColor(
+        redOverlay,
+        1100
+    );
+
+    createRing();
+    createRing();
+
+    await wait(950);
+
+
+    /*
+       RAREならここ
+    */
+
+    if (prize.effect === "blue") {
+
+        doFlash();
+
+        await wait(500);
+
+        showResult(prize);
+
+        return;
+    }
+
+
+    /* ----------------------------------------------
+       STEP 4
+       金
+    ---------------------------------------------- */
+
+    activateColor(
+        goldOverlay,
+        1300
+    );
+
+    aura.style.opacity = ".75";
+
+    createRing();
+    createRing();
+    createRing();
+
+    await wait(1100);
+
+
+    /*
+       SUPER RARE
+    */
+
+    if (prize.effect === "red") {
+
+        doFlash();
+
+        await wait(550);
+
+        showResult(prize);
+
+        return;
+    }
+
+
+    /* ----------------------------------------------
+       STEP 5
+       虹
+    ---------------------------------------------- */
+
+    rainbowOverlay.style.opacity = "0";
+
+    rainbowOverlay.style.animation =
+        "rainbowPulse 1.5s ease-out forwards";
+
+    aura.style.opacity = "1";
+
+    createRing();
+    createRing();
+    createRing();
+    createRing();
+
+    await wait(1200);
+
+    doFlash();
+
+    await wait(650);
+
+    showResult(prize);
+}
+
+
+/* ==================================================
+   結果表示
+================================================== */
+
+function showResult(prize) {
+
+    resultRarity.textContent =
+        prize.rarity;
+
+    resultName.textContent =
+        prize.name;
+
+
+    /* 結果の色 */
+
+    let color = "white";
+
+    if (prize.effect === "blue") {
+        color = "#70b7ff";
+    }
+
+    if (prize.effect === "red") {
+        color = "#ff6464";
+    }
+
+    if (prize.effect === "gold") {
+        color = "#ffe06a";
+    }
+
+    if (prize.effect === "rainbow") {
+
+        resultName.style.background =
+            "linear-gradient(90deg,#ff4d4d,#ffe34d,#4dff88,#4ddfff,#7770ff,#e85cff)";
+
+        resultName.style.webkitBackgroundClip =
+            "text";
+
+        resultName.style.webkitTextFillColor =
+            "transparent";
+
+        resultName.style.color =
+            "transparent";
+
+    } else {
+
+        resultName.style.background =
+            "none";
+
+        resultName.style.webkitTextFillColor =
+            color;
+
+        resultName.style.color =
+            color;
+    }
+
+
+    result.style.opacity = "1";
+
+    result.style.transform =
+        "translate(-50%, -50%) scale(1)";
+
+    result.style.transition =
+        "opacity .6s ease, transform .7s cubic-bezier(.15,.8,.2,1)";
+
+
+    setTimeout(() => {
+
+        againButton.classList.add("show");
+
+    }, 700);
+}
+
+
+/* ==================================================
+   ガチャ開始
+================================================== */
+
+async function drawGacha() {
+
+    resetEffects();
+
+    document.body.classList.add("drawing");
+
+    const prize =
+        getPrize();
+
+    await wait(300);
+
+    await playEffect(prize);
+}
+
+
+/* ==================================================
+   待機
+================================================== */
+
+function wait(ms) {
+
+    return new Promise(
+        resolve =>
+            setTimeout(resolve, ms)
+    );
+}
+
+
+/* ==================================================
+   ボタン
+================================================== */
+
+gachaButton.addEventListener(
+    "click",
+    drawGacha
+);
+
+againButton.addEventListener(
+    "click",
+    drawGacha
+);
+
+
+/* ==================================================
+   初期状態
+================================================== */
+
+resetEffects();
+
+</script>
+
+</body>
+</html>
