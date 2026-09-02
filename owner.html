@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>イベントガチャ｜オーナー管理</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:linear-gradient(135deg,#101522,#202b45);
+  color:#fff;
+}
+header{
+  padding:25px 20px;
+  background:rgba(0,0,0,.35);
+  border-bottom:1px solid rgba(255,255,255,.15);
+}
+h1{margin:0;font-size:25px}
+.container{padding:20px;max-width:700px;margin:auto}
+.card{
+  background:rgba(255,255,255,.09);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:18px;
+  backdrop-filter:blur(10px);
+}
+h2{margin-top:0;font-size:20px}
+label{
+  display:block;
+  margin-top:14px;
+  margin-bottom:6px;
+  color:#ccd5e8;
+}
+input,button{
+  width:100%;
+  padding:13px;
+  border-radius:10px;
+  border:0;
+  font-size:16px;
+}
+input{
+  background:#fff;
+  color:#111;
+}
+button{
+  margin-top:12px;
+  background:#37d39a;
+  color:#07130e;
+  font-weight:bold;
+}
+button.red{background:#ff5d70;color:#fff}
+button.blue{background:#5795ff;color:#fff}
+.prize{
+  padding:14px;
+  margin-top:10px;
+  background:rgba(0,0,0,.25);
+  border-radius:12px;
+}
+.rate{
+  color:#8fffd0;
+  font-weight:bold;
+}
+.ticket{
+  padding:12px;
+  margin-top:8px;
+  background:rgba(255,255,255,.08);
+  border-radius:10px;
+  word-break:break-all;
+}
+.small{color:#9da9bf;font-size:13px}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🎰 イベントガチャ｜オーナー管理</h1>
+  <div class="small">管理者専用ページ</div>
+</header>
+
+<div class="container">
+
+<div class="card">
+<h2>🔐 オーナー情報</h2>
+
+<label>ガチャタイトル</label>
+<input id="title" value="イベントガチャ">
+
+<label>1回に必要なチケット</label>
+<input id="ticketCost" type="number" value="1" min="1">
+
+<button onclick="saveSettings()">設定を保存</button>
+</div>
+
+
+<div class="card">
+<h2>🎁 景品を追加</h2>
+
+<label>景品名</label>
+<input id="prizeName" placeholder="例：限定アイテム">
+
+<label>レア度</label>
+<input id="rarity" placeholder="例：SSR">
+
+<label>排出率（%）</label>
+<input id="rate" type="number" step="0.01" placeholder="例：1">
+
+<label>景品画像URL</label>
+<input id="image" placeholder="https://...">
+
+<button onclick="addPrize()">景品を追加</button>
+
+<div id="prizeList"></div>
+</div>
+
+
+<div class="card">
+<h2>🎫 チケット発行</h2>
+
+<label>発行枚数</label>
+<input id="ticketCount" type="number" value="10" min="1">
+
+<button class="blue" onclick="createTickets()">
+ランダムチケットを発行
+</button>
+
+<div id="ticketList"></div>
+</div>
+
+
+<div class="card">
+<h2>📊 現在の設定</h2>
+<div id="summary"></div>
+</div>
+
+
+<div class="card">
+<h2>📜 ガチャ結果</h2>
+<div id="history"></div>
+<button class="red" onclick="clearHistory()">履歴を削除</button>
+</div>
+
+</div>
+
+
+<script>
+
+let prizes = JSON.parse(localStorage.getItem("gachaPrizes") || "[]");
+let tickets = JSON.parse(localStorage.getItem("gachaTickets") || "[]");
+let history = JSON.parse(localStorage.getItem("gachaHistory") || "[]");
+
+
+function saveSettings(){
+
+  const settings={
+    title:document.getElementById("title").value,
+    ticketCost:document.getElementById("ticketCost").value
+  };
+
+  localStorage.setItem("gachaSettings",JSON.stringify(settings));
+
+  alert("設定を保存しました！");
+}
+
+
+function addPrize(){
+
+  const name=document.getElementById("prizeName").value.trim();
+  const rarity=document.getElementById("rarity").value.trim();
+  const rate=parseFloat(document.getElementById("rate").value);
+  const image=document.getElementById("image").value.trim();
+
+  if(!name || !rarity || isNaN(rate)){
+    alert("景品名・レア度・排出率を入力してください");
+    return;
+  }
+
+  prizes.push({
+    id:Date.now(),
+    name,
+    rarity,
+    rate,
+    image
+  });
+
+  localStorage.setItem("gachaPrizes",JSON.stringify(prizes));
+
+  document.getElementById("prizeName").value="";
+  document.getElementById("rarity").value="";
+  document.getElementById("rate").value="";
+  document.getElementById("image").value="";
+
+  render();
+}
+
+
+function deletePrize(id){
+
+  prizes=prizes.filter(p=>p.id!==id);
+
+  localStorage.setItem("gachaPrizes",JSON.stringify(prizes));
+
+  render();
+}
+
+
+function createTickets(){
+
+  const count=parseInt(document.getElementById("ticketCount").value);
+
+  if(!count || count<1)return;
+
+  for(let i=0;i<count;i++){
+
+    const code=
+      "GACHA-" +
+      Math.random().toString(36).substring(2,8).toUpperCase() +
+      "-" +
+      Math.random().toString(36).substring(2,8).toUpperCase();
+
+    tickets.push({
+      code,
+      used:false,
+      created:new Date().toLocaleString("ja-JP")
+    });
+  }
+
+  localStorage.setItem("gachaTickets",JSON.stringify(tickets));
+
+  render();
+}
+
+
+function clearHistory(){
+
+  if(confirm("ガチャ結果をすべて削除しますか？")){
+
+    history=[];
+
+    localStorage.setItem("gachaHistory","[]");
+
+    render();
+  }
+}
+
+
+function render(){
+
+  const prizeList=document.getElementById("prizeList");
+
+  prizeList.innerHTML="";
+
+  if(prizes.length===0){
+
+    prizeList.innerHTML=
+      '<p class="small">まだ景品が登録されていません。</p>';
+
+  }else{
+
+    prizes.forEach(p=>{
+
+      prizeList.innerHTML+=`
+
+      <div class="prize">
+
+        <strong>${escapeHtml(p.name)}</strong>
+
+        <br>
+
+        レア度：
+        <span class="rate">${escapeHtml(p.rarity)}</span>
+
+        <br>
+
+        排出率：
+        <span class="rate">${p.rate}%</span>
+
+        ${p.image ?
+        `<br><img src="${escapeHtml(p.image)}"
+        style="max-width:120px;margin-top:8px;border-radius:8px">`
+        :""}
+
+        <button class="red"
+        onclick="deletePrize(${p.id})">
+        この景品を削除
+        </button>
+
+      </div>
+
+      `;
+
+    });
+  }
+
+
+  const ticketList=document.getElementById("ticketList");
+
+  ticketList.innerHTML="";
+
+  tickets.slice().reverse().forEach(t=>{
+
+    ticketList.innerHTML+=`
+
+      <div class="ticket">
+
+        🎫 <strong>${escapeHtml(t.code)}</strong>
+
+        <br>
+
+        <span class="small">
+        ${t.used ? "使用済み" : "未使用"}｜
+        ${escapeHtml(t.created)}
+        </span>
+
+      </div>
+
+    `;
+
+  });
+
+
+  const totalRate=
+    prizes.reduce((sum,p)=>sum+Number(p.rate),0);
+
+  document.getElementById("summary").innerHTML=`
+
+    景品数：<strong>${prizes.length}</strong>
+
+    <br><br>
+
+    排出率合計：
+    <strong>${totalRate.toFixed(2)}%</strong>
+
+    <br><br>
+
+    発行チケット：
+    <strong>${tickets.length}</strong>
+
+    <br>
+
+    未使用：
+    <strong>${tickets.filter(t=>!t.used).length}</strong>
+
+  `;
+
+
+  const historyBox=document.getElementById("history");
+
+  historyBox.innerHTML="";
+
+  if(history.length===0){
+
+    historyBox.innerHTML=
+      '<p class="small">まだガチャ結果がありません。</p>';
+
+  }else{
+
+    history.slice().reverse().forEach(h=>{
+
+      historyBox.innerHTML+=`
+
+        <div class="ticket">
+
+          🎁 <strong>${escapeHtml(h.prize)}</strong>
+
+          <br>
+
+          レア度：
+          ${escapeHtml(h.rarity)}
+
+          <br>
+
+          <span class="small">
+          ${escapeHtml(h.date)}
+          </span>
+
+        </div>
+
+      `;
+
+    });
+
+  }
+
+}
+
+
+function escapeHtml(str){
+
+  return String(str)
+  .replace(/&/g,"&amp;")
+  .replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;")
+  .replace(/"/g,"&quot;")
+  .replace(/'/g,"&#039;");
+
+}
+
+
+const savedSettings=
+JSON.parse(localStorage.getItem("gachaSettings") || "null");
+
+if(savedSettings){
+
+  document.getElementById("title").value=
+    savedSettings.title || "イベントガチャ";
+
+  document.getElementById("ticketCost").value=
+    savedSettings.ticketCost || 1;
+
+}
+
+render();
+
+</script>
+
+</body>
+</html>
