@@ -483,5 +483,44 @@ async function loadPrizesFromSupabase() {
 
 loadPrizesFromSupabase();
 </script>
+  <script>
+async function loadPrizesFromSupabase() {
+  const { data: gachas, error: gachaError } = await supabaseClient
+    .from("gachas")
+    .select("id")
+    .eq("name", "イベントガチャ")
+    .limit(1);
+
+  if (gachaError || !gachas || gachas.length === 0) {
+    console.error("ガチャ情報の取得エラー:", gachaError);
+    return;
+  }
+
+  const gachaId = gachas[0].id;
+
+  const { data, error } = await supabaseClient
+    .from("gacha_prizes")
+    .select("*")
+    .eq("gacha_id", gachaId)
+    .order("sort", { ascending: true });
+
+  if (error) {
+    console.error("景品取得エラー:", error);
+    return;
+  }
+
+  prizes = (data || []).map(p => ({
+    id: p.id,
+    name: p.name,
+    rarity: p.rarity ?? p.rarely ?? "",
+    rate: Number(p.probability ?? p.rate ?? 0),
+    image: p.image ?? p.image_url ?? ""
+  }));
+
+  render();
+}
+
+loadPrizesFromSupabase();
+</script>
 </body>
 </html>
