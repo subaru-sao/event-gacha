@@ -73,6 +73,16 @@ button.blue{background:#5795ff;color:#fff}
 }
 .small{color:#9da9bf;font-size:13px}
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://rosudqtzqadtvpzmeams.supabase.co/rest/v1/";
+const SUPABASE_KEY = "sb_publishable_PEkWdcokJff8hPvRGnlP_g_jlOggB7Z";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+</script>
 </head>
 
 <body>
@@ -417,6 +427,22 @@ if(savedSettings){
 render();
 
 </script>
+<script>
+async function loadPrizes() {
+  const { data, error } = await supabaseClient
+    .from("gacha_prizes")
+    .select("*")
+    .order("sort", { ascending: true });
 
+  if (error) {
+    console.error("景品読み込みエラー:", error);
+    return;
+  }
+
+  console.log("Supabaseの景品:", data);
+}
+
+loadPrizes();
+</script>
 </body>
 </html>
