@@ -521,6 +521,33 @@ async function loadPrizesFromSupabase() {
 }
 
 loadPrizesFromSupabase();
+    <script>
+async function loadPrizesDirect() {
+  const { data, error } = await supabaseClient
+    .from("gacha_prizes")
+    .select("*")
+    .order("sort", { ascending: true });
+
+  if (error) {
+    alert("Supabaseエラー: " + error.message);
+    console.error(error);
+    return;
+  }
+
+  prizes = (data || [])
+    .filter(p => p.gacha_id)
+    .map(p => ({
+      id: p.id,
+      name: p.name,
+      rarity: p.rarity ?? p.rarely ?? "",
+      rate: Number(p.probability ?? 0),
+      image: p.image ?? ""
+    }));
+
+  render();
+}
+
+loadPrizesDirect();
 </script>
 </body>
 </html>
