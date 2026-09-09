@@ -549,5 +549,21 @@ async function loadPrizesDirect() {
 
 loadPrizesDirect();
 </script>
+  <script>
+async function checkSupabasePrizes() {
+  const { data, error } = await supabaseClient
+    .from("gacha_prizes")
+    .select("*");
+
+  if (error) {
+    alert("Supabaseエラー：\n" + error.message);
+    return;
+  }
+
+  alert("Supabaseから取得した景品数： " + (data || []).length);
+}
+
+checkSupabasePrizes();
+</script>
 </body>
 </html>
