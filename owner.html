@@ -413,157 +413,49 @@ function escapeHtml(str){
 
 const savedSettings=
 JSON.parse(localStorage.getItem("gachaSettings") || "null");
+  async function loadPrizesFromSupabase() {
+  const { data: gachas, error: gachaError } = await supabaseClient
+    .from("gachas")
+    .select("id")
+    .eq("name", "イベントガチャ")
+    .limit(1);
 
-if(savedSettings){
+  if (gachaError) {
+    console.error("ガチャ取得エラー:", gachaError);
+    return;
+  }
 
-  document.getElementById("title").value=
-    savedSettings.title || "イベントガチャ";
+  if (!gachas || gachas.length === 0) {
+    console.error("イベントガチャが見つかりません");
+    return;
+  }
 
-  document.getElementById("ticketCost").value=
-    savedSettings.ticketCost || 1;
+  const gachaId = gachas[0].id;
 
+  const { data, error } = await supabaseClient
+    .from("gacha_prizes")
+    .select("*")
+    .eq("gacha_id", gachaId)
+    .order("sort", { ascending: true });
+
+  if (error) {
+    console.error("景品取得エラー:", error);
+    return;
+  }
+
+  prizes = (data || []).map(p => ({
+    id: p.id,
+    name: p.name,
+    rarity: p.rarity ?? p.rarely ?? "",
+    rate: Number(p.probability ?? 0),
+    image: p.image ?? p.image_url ?? ""
+  }));
+
+  render();
 }
 
 render();
-
-</script>
-<script>
-async function loadPrizes() {
-  const { data, error } = await supabaseClient
-    .from("gacha_prizes")
-    .select("*")
-    .order("sort", { ascending: true });
-
-  if (error) {
-    console.error("景品読み込みエラー:", error);
-    return;
-  }
-
-  console.log("Supabaseの景品:", data);
-}
-
-loadPrizes();
-</script>
-  <script>
-async function loadPrizesFromSupabase() {
-  const { data: gachas, error: gachaError } = await supabaseClient
-    .from("gachas")
-    .select("id")
-    .eq("name", "イベントガチャ")
-    .limit(1);
-
-  if (gachaError || !gachas || gachas.length === 0) {
-    console.error("ガチャ情報の取得エラー:", gachaError);
-    return;
-  }
-
-  const gachaId = gachas[0].id;
-
-  const { data, error } = await supabaseClient
-    .from("gacha_prizes")
-    .select("*")
-    .eq("gacha_id", gachaId)
-    .order("sort", { ascending: true });
-
-  if (error) {
-    console.error("景品取得エラー:", error);
-    return;
-  }
-
-  prizes = (data || []).map(p => ({
-    id: p.id,
-    name: p.name,
-    rarity: p.rarity ?? p.rarely ?? "",
-    rate: Number(p.probability ?? p.rate ?? 0),
-    image: p.image ?? p.image_url ?? ""
-  }));
-
-  render();
-}
-
 loadPrizesFromSupabase();
-</script>
-  <script>
-async function loadPrizesFromSupabase() {
-  const { data: gachas, error: gachaError } = await supabaseClient
-    .from("gachas")
-    .select("id")
-    .eq("name", "イベントガチャ")
-    .limit(1);
-
-  if (gachaError || !gachas || gachas.length === 0) {
-    console.error("ガチャ情報の取得エラー:", gachaError);
-    return;
-  }
-
-  const gachaId = gachas[0].id;
-
-  const { data, error } = await supabaseClient
-    .from("gacha_prizes")
-    .select("*")
-    .eq("gacha_id", gachaId)
-    .order("sort", { ascending: true });
-
-  if (error) {
-    console.error("景品取得エラー:", error);
-    return;
-  }
-
-  prizes = (data || []).map(p => ({
-    id: p.id,
-    name: p.name,
-    rarity: p.rarity ?? p.rarely ?? "",
-    rate: Number(p.probability ?? p.rate ?? 0),
-    image: p.image ?? p.image_url ?? ""
-  }));
-
-  render();
-}
-
-loadPrizesFromSupabase();
-    <script>
-async function loadPrizesDirect() {
-  const { data, error } = await supabaseClient
-    .from("gacha_prizes")
-    .select("*")
-    .order("sort", { ascending: true });
-
-  if (error) {
-    alert("Supabaseエラー: " + error.message);
-    console.error(error);
-    return;
-  }
-
-  prizes = (data || [])
-    .filter(p => p.gacha_id)
-    .map(p => ({
-      id: p.id,
-      name: p.name,
-      rarity: p.rarity ?? p.rarely ?? "",
-      rate: Number(p.probability ?? 0),
-      image: p.image ?? ""
-    }));
-
-  render();
-}
-
-loadPrizesDirect();
-</script>
-  <script>
-async function checkSupabasePrizes() {
-  const { data, error } = await supabaseClient
-    .from("gacha_prizes")
-    .select("*");
-
-  if (error) {
-    alert("Supabaseエラー：\n" + error.message);
-    return;
-  }
-
-  alert("Supabaseから取得した景品数： " + (data || []).length);
-}
-
-checkSupabasePrizes();
 </script>
 </body>
   
