@@ -1013,16 +1013,11 @@ function escapeHtml(str){
    起動
 ========================= */
 
-async function start(){
+async function getGachaId(){
 
-  await loadPrizes();
-
-  renderTickets();
-
-  renderSummary();
-
-}
-
+  // Supabaseに作成した「イベントガチャ」のID
+  return "f56d4eb6-148f-4070-911f-6f96991b4c6b";
+}  
 
 start();
 
