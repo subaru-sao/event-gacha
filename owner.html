@@ -326,33 +326,7 @@ let tickets = [];
 ========================= */
 
 async function getGachaId(){
-
-  const { data, error } =
-    await supabaseClient
-      .from("gachas")
-      .select("id")
-      .eq("name","イベントガチャ")
-      .limit(1);
-
-  if(error){
-
-    console.error(error);
-
-    throw new Error(
-      "ガチャ情報を取得できませんでした"
-    );
-
-  }
-
-  if(!data || data.length === 0){
-
-    throw new Error(
-      "イベントガチャが見つかりません"
-    );
-
-  }
-
-  return data[0].id;
+  return "f56d4eb6-148f-4070-911f-6f96991b4c6b";
 }
 
 
