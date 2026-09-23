@@ -352,8 +352,7 @@ async function loadPrizes(){
         .from("gacha_prizes")
         .select("*")
         .eq("gacha_id",gachaId)
-        .order("sort",{ascending:true});
-
+.order("sort_order",{ascending:true});
     if(error){
 
   console.error(error);
