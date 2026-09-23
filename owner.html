@@ -356,13 +356,15 @@ async function loadPrizes(){
 
     if(error){
 
-      console.error(error);
+  console.error(error);
 
-      list.innerHTML =
-        '<p class="error">景品の読み込みに失敗しました。</p>';
+  list.innerHTML =
+    '<p class="error">読み込みエラー：' +
+    escapeHtml(error.message) +
+    '</p>';
 
-      return;
-    }
+  return;
+}
 
     prizes =
       (data || []).map(p => ({
